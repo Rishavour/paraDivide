@@ -12,7 +12,7 @@
         @font-face {
           font-family: 'Roboto';
           src: url('/home/amnesia/Persistent/Tor Browser/font/RobotoCondensed-VariableFont_wght.ttf')
-          }
+        }
 
         body {
             font-family: 'Roboto', sans-serif;
@@ -23,6 +23,7 @@
             justify-content: flex-start;
             height: 100vh;
             margin: 0;
+            position: relative;
         }
 
         /* Container for columns 1 and 2 */
@@ -36,6 +37,8 @@
             width: 70%;
             margin-right: 0px;
             max-height: 100vh;
+            transition: all 0.3s ease;
+            z-index: 1;
         }
 
         .grid-item {
@@ -63,6 +66,41 @@
             border: 1px solid #ccc;
             display: grid;
             grid-template-rows: repeat(100, auto);
+            transition: all 0.3s ease;
+            z-index: 1;
+        }
+
+        /* Expanded column styles */
+        .expanded-column-1, .expanded-column-2 {
+            width: 100% !important;
+            margin: 0;
+            z-index: 1000;
+            position: relative;
+            padding: 50px 50px 0 50px;
+            background: linear-gradient(to right, rgba(0,0,0,0.5), rgba(0,0,0,0) 50px, rgba(0,0,0,0) calc(100% - 50px), rgba(0,0,0,0.5));
+        }
+
+        .expanded-column-3 {
+            width: 100% !important;
+            margin: 0;
+            z-index: 1000;
+            position: relative;
+            padding: 50px 50px 0 50px;
+            background: linear-gradient(to right, rgba(0,0,0,0.5), rgba(0,0,0,0) 50px, rgba(0,0,0,0) calc(100% - 50px), rgba(0,0,0,0.5));
+        }
+
+        /* Hide other columns when one is expanded */
+        .column-hidden {
+            display: none;
+        }
+
+        /* Show only specific column */
+        .show-only-column-1 .grid-item:nth-child(even) {
+            display: none;
+        }
+
+        .show-only-column-2 .grid-item:nth-child(odd) {
+            display: none;
         }
 
         /* Fixed buttons and counters on top */
@@ -78,6 +116,7 @@
             border: 1px solid #ccc;
             padding: 0px 12px;
             box-shadow: 3px 2px 2px rgba(255, 0, 0, 0.2);
+            z-index: 2000;
         }
 
         .button-container button {
@@ -87,6 +126,21 @@
             line-height: 1.2;
         }
 
+        .expand-button {
+            width: 30px;
+            height: 30px;
+            font-size: 14px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .expand-group {
+            display: flex;
+            gap: 0px;
+        }
+
         /* Counter style */
         .counter {
             display: flex;
@@ -94,9 +148,8 @@
             gap: 1px;
             font-size: 30px;
         }
-        
-        .column-1-cell {
 
+        .column-1-cell {
         }
 
         /* Image thumbnail styles */
@@ -108,7 +161,7 @@
             vertical-align: middle;
             margin: 0 2px;
         }
-        
+
         .thumb::before {
             content: "🖼️";
             font-size: 1em;
@@ -122,13 +175,24 @@
             display: none;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            z-index: 3000;
         }
-        
+
         #overlay img {
             max-width: 90%;
             max-height: 90%;
             box-shadow: 0 0 20px #000;
+        }
+
+        /* Style for clickable links */
+        a {
+            color: #1e90ff;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        a:hover {
+            color: #63b3ed;
         }
 
         @media (max-width: 1200px) {
@@ -159,7 +223,12 @@
             <div><span id="wordCount">0</span> / <span id="sentenceCount">0</span></div>
         </div>
         <button onclick="saveData()">Save</button>
-        <button onclick="loadData()">Load</button>  
+        <button onclick="loadData()">Load</button>
+        <div class="expand-group">
+            <button class="expand-button" onclick="toggleExpand(1)">1</button>
+            <button class="expand-button" onclick="toggleExpand(2)">2</button>
+            <button class="expand-button" onclick="toggleExpand(3)">3</button>
+        </div>
     </div>
 
     <!-- First and Second Column -->
@@ -192,6 +261,42 @@
         const maxSentencesColumn1 = 50;
         const maxWordsColumn3Even = 1000;
         const maxSentencesColumn3Even = 50;
+
+        let currentExpanded = null;
+
+        // Function to toggle column expansion
+        function toggleExpand(column) {
+            const gridContainer = document.getElementById('grid');
+            const column3Container = document.getElementById('column-3');
+
+            if (currentExpanded === column) {
+                // Reset to default
+                currentExpanded = null;
+                gridContainer.classList.remove('expanded-column-1', 'expanded-column-2', 'show-only-column-1', 'show-only-column-2', 'column-hidden');
+                gridContainer.style.gridTemplateColumns = '1fr 1fr';
+                column3Container.classList.remove('expanded-column-3', 'column-hidden');
+            } else {
+                // Reset first
+                gridContainer.classList.remove('expanded-column-1', 'expanded-column-2', 'show-only-column-1', 'show-only-column-2', 'column-hidden');
+                gridContainer.style.gridTemplateColumns = '1fr 1fr';
+                column3Container.classList.remove('expanded-column-3', 'column-hidden');
+
+                currentExpanded = column;
+
+                if (column === 1) {
+                    gridContainer.classList.add('expanded-column-1', 'show-only-column-1');
+                    gridContainer.style.gridTemplateColumns = '1fr';
+                    column3Container.classList.add('column-hidden');
+                } else if (column === 2) {
+                    gridContainer.classList.add('expanded-column-2', 'show-only-column-2');
+                    gridContainer.style.gridTemplateColumns = '1fr';
+                    column3Container.classList.add('column-hidden');
+                } else if (column === 3) {
+                    column3Container.classList.add('expanded-column-3');
+                    gridContainer.classList.add('column-hidden');
+                }
+            }
+        }
 
         // Toolbar buttons for formatting (bold and italic)
         function formatText(command) {
@@ -240,7 +345,6 @@
 
         // Image viewer functions
         function openImage(imageSrc) {
-            // Find the image in our images array or add it
             let index = images.indexOf(imageSrc);
             if (index === -1) {
                 images.push(imageSrc);
@@ -255,10 +359,8 @@
         // Rebind all thumb click handlers
         function rebindThumbs() {
             document.querySelectorAll('.thumb').forEach(thumb => {
-                // Remove existing handler to avoid duplicates
                 thumb.onclick = null;
                 
-                // Add click handler
                 thumb.onclick = function(e) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -270,59 +372,141 @@
             });
         }
 
-        // Handle paste events for images
+        // Function to convert URLs to clickable links
+        function makeURLsClickable(text) {
+            const urlRegex = /(https?:\/\/[^\s<]+)(?![^<]*>)/g;
+            return text.replace(urlRegex, '<a href="$1" target="_blank">$1</a>');
+        }
+
+        // Function to process URLs in editable content without affecting existing HTML
+        function processURLsInContent(element) {
+            const selection = window.getSelection();
+            let range;
+            if (selection.rangeCount > 0) {
+                range = selection.getRangeAt(0).cloneRange();
+            }
+
+            const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+            let node;
+            while ((node = walker.nextNode())) {
+                const text = node.textContent;
+                if (text.match(/(https?:\/\/[^\s]+)/)) {
+                    const parent = node.parentNode;
+                    if (parent.tagName !== 'A') {
+                        const newHTML = makeURLsClickable(text);
+                        if (newHTML !== text) {
+                            const tempDiv = document.createElement('div');
+                            tempDiv.innerHTML = newHTML;
+                            while (tempDiv.firstChild) {
+                                parent.insertBefore(tempDiv.firstChild, node);
+                            }
+                            parent.removeChild(node);
+                        }
+                    }
+                }
+            }
+
+            if (range) {
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+        }
+
+        // Function to split sentences preserving brackets and making URLs clickable inside them
+        function splitSentencesWithURLs(html) {
+            const bracketRegex = /\[([^\]]+)\]/g;
+            let bracketMap = new Map();
+            let placeholderIndex = 0;
+
+            // Replace brackets with placeholders
+            const textWithBracketPlaceholders = html.replace(bracketRegex, (match, content) => {
+                const placeholder = `__BRACKET_${placeholderIndex}__`;
+                bracketMap.set(placeholder, '[' + makeURLsClickable(content) + ']');
+                placeholderIndex++;
+                return placeholder;
+            });
+
+            // Split by sentence-ending punctuation
+            let sentences = textWithBracketPlaceholders.split(/\.\s*/).filter(s => s.trim() !== '');
+
+            // Restore brackets in sentences
+            sentences = sentences.map(sentence => {
+                let restored = sentence;
+                bracketMap.forEach((content, placeholder) => {
+                    restored = restored.replace(placeholder, content);
+                });
+                return restored;
+            });
+
+            return sentences;
+        }
+
+        // Handle paste events for images and text
         document.addEventListener("paste", e => {
             let hasImage = false;
-            
+            const pastedText = e.clipboardData.getData('text/plain');
+            const hasText = !!pastedText;
+
             [...e.clipboardData.items].forEach(item => {
                 if (item.type.startsWith("image")) {
                     hasImage = true;
-                    e.preventDefault(); // Prevent default paste behavior
+                    e.preventDefault();
                     
                     const file = item.getAsFile();
                     const reader = new FileReader();
                     
                     reader.onload = function(event) {
-                        const imageSrc = event.target.result; // Base64 data URL
+                        const imageSrc = event.target.result;
                         
-                        // Create thumb span instead of img
-                        const thumbSpan = document.createElement('span');
-                        thumbSpan.className = 'thumb';
-                        thumbSpan.dataset.src = imageSrc;
+                        // Check if the image already exists in the images array
+                        if (images.includes(imageSrc)) {
+                            // Reuse existing image
+                            const thumbHtml = `<span class="thumb" data-src="${imageSrc}"></span>&nbsp;`;
+                            document.execCommand('insertHTML', false, thumbHtml);
+                        } else {
+                            // Add new image
+                            images.push(imageSrc);
+                            const thumbHtml = `<span class="thumb" data-src="${imageSrc}"></span>&nbsp;`;
+                            document.execCommand('insertHTML', false, thumbHtml);
+                        }
                         
-                        // Insert using execCommand with immediate cursor positioning
-                        const thumbHtml = `<span class="thumb" data-src="${imageSrc}"></span>&nbsp;`;
-                        document.execCommand('insertHTML', false, thumbHtml);
-                        
-                        // Force cursor to move to the end after insertion
                         setTimeout(() => {
                             const selection = window.getSelection();
                             const activeElement = document.activeElement;
                             
                             if (activeElement && activeElement.contentEditable === 'true') {
-                                // Move cursor to the very end of the active element
                                 const range = document.createRange();
                                 range.selectNodeContents(activeElement);
-                                range.collapse(false); // Collapse to end
+                                range.collapse(false);
                                 
                                 selection.removeAllRanges();
                                 selection.addRange(range);
                             }
                         }, 10);
                         
-                        // Add to images array and rebind
-                        if (!images.includes(imageSrc)) {
-                            images.push(imageSrc);
-                        }
                         rebindThumbs();
                     };
                     
-                    reader.readAsDataURL(file); // Convert to base64
+                    reader.readAsDataURL(file);
                 }
             });
-            
-            if (hasImage) {
-                e.preventDefault(); // Prevent the default paste if we handled an image
+
+            if (hasText && !hasImage) {
+                e.preventDefault();
+                const htmlText = makeURLsClickable(pastedText.replace(/\n/g, '<br>'));
+                document.execCommand('insertHTML', false, htmlText);
+                const activeElement = document.activeElement;
+                if (activeElement && activeElement.contentEditable === 'true') {
+                    processURLsInContent(activeElement);
+                }
+            }
+        });
+
+        // Handle clicks on links in all cells
+        document.addEventListener('click', function(e) {
+            if (e.target.tagName === 'A') {
+                e.preventDefault();
+                window.open(e.target.href, '_blank');
             }
         });
 
@@ -343,20 +527,17 @@
 
         // Generate 100 rows, 2 columns in the grid (Column 1 and 2)
         for (let i = 0; i < 100; i++) {
-            // Column 1 (Editable)
             const editableCell = document.createElement('div');
             editableCell.classList.add('grid-item', 'editable', 'column-1-cell');
             editableCell.contentEditable = true;
             editableCell.dataset.row = i;
             grid.appendChild(editableCell);
 
-            // Column 2 (Uneditable, initially empty)
             const column2Cell = document.createElement('div');
             column2Cell.classList.add('grid-item', 'readonly');
             column2Cell.dataset.row = i;
             grid.appendChild(column2Cell);
 
-            // Generate cells for Column 3 (fixed)
             const column3OddCell = document.createElement('div');
             column3OddCell.classList.add('grid-item', 'readonly');
             column3OddCell.contentEditable = false;
@@ -369,18 +550,15 @@
             column3EvenCell.dataset.row = i;
             column3.appendChild(column3EvenCell);
 
-            // Clicking a cell in Column 1 populates odd cells in Column 3
             editableCell.addEventListener('focus', function () {
                 currentRow = i;
                 updateCounters(editableCell.textContent);
-                const sentences = editableCell.innerHTML.split(/\.\s*/).filter(s => s.trim() !== '');
+                const sentences = splitSentencesWithURLs(editableCell.innerHTML);
                 
-                // Clear all Column 3 content first
                 for (let j = 0; j < 100 * 2; j++) {
                     column3.children[j].innerHTML = "";
                 }
 
-                // Update the odd cells in Column 3 with sentences from Column 1
                 for (let j = 0; j < sentences.length; j++) {
                     if (j === sentences.length - 1) {
                         column3.children[j * 2].innerHTML = sentences[j].trim();
@@ -389,34 +567,30 @@
                     }
                 }
 
-                // Load existing content for even cells from column3Data if it exists
                 if (column3Data[currentRow]) {
                     for (let j = 0; j < column3Data[currentRow].length; j++) {
                         column3.children[j * 2 + 1].innerHTML = column3Data[currentRow][j];
                     }
                 }
                 
-                // Rebind thumbs after content update
                 rebindThumbs();
             });
 
-            // Limit input for Column 1 (Editable)
             editableCell.addEventListener('input', function () {
                 enforceLimits(editableCell, true);
                 updateCounters(editableCell.textContent);
-                // Rebind thumbs after input
+                processURLsInContent(editableCell);
                 rebindThumbs();
             });
 
-            // Select and show counters for even cells in Column 3 when clicked
             column3EvenCell.addEventListener('focus', function () {
                 updateCounters(column3EvenCell.textContent);
             });
 
-            // Limit input and update for Column 3 even cells
             column3EvenCell.addEventListener('input', function () {
                 enforceLimits(column3EvenCell, false);
                 updateCounters(column3EvenCell.textContent);
+                processURLsInContent(column3EvenCell);
                 
                 if (currentRow !== null) {
                     let evenCellsContent = [];
@@ -424,14 +598,12 @@
                     let secondColumnContent = [];
                     let naturalOrderIndex = 0;
 
-                    // Helper function to strip HTML tags for prefix detection
                     function stripHTMLTags(html) {
                         const div = document.createElement('div');
                         div.innerHTML = html;
                         return div.textContent || div.innerText || '';
                     }
 
-                    // First pass: Process the even cells for Column 3
                     for (let j = 1; j < 100 * 2; j += 2) {
                         let content = column3.children[j].innerHTML.trim();
                         evenCellsContent.push(content);
@@ -449,7 +621,6 @@
 
                     orderedContent.sort((a, b) => a.orderIndex - b.orderIndex);
 
-                    // Second pass: Assign remaining cells to natural order positions
                     for (let j = 1; j < 100 * 2; j += 2) {
                         let content = column3.children[j].innerHTML.trim();
                         if (content !== "") {
@@ -466,14 +637,9 @@
                     }
 
                     let finalOrderedContent = orderedContent.map(item => item.content).concat(secondColumnContent);
-
-                    // Update the second column with combined content, preserving formatting
                     grid.children[currentRow * 2 + 1].innerHTML = finalOrderedContent.length > 0 ? finalOrderedContent.join(' ') : '';
-
-                    // Save the content of even cells for the current row in column3Data
                     column3Data[currentRow] = evenCellsContent;
                     
-                    // Rebind thumbs after content update
                     rebindThumbs();
                 }
             });
@@ -482,6 +648,8 @@
         // Save editable data to a TXT file
         function saveData() {
             const data = [];
+            // Collect unique image data URLs to include at the end of the file
+            const uniqueImages = [...new Set(images)];
 
             for (let i = 0; i < 100; i++) {
                 const column1Content = grid.children[i * 2].innerHTML;
@@ -507,19 +675,21 @@
                 }
             }
 
+            // Append unique images to the saved file
+            if (uniqueImages.length > 0) {
+                data.push('\nImages:');
+                uniqueImages.forEach((imageSrc, index) => {
+                    data.push(`Image ${index + 1}: ${imageSrc}`);
+                });
+            }
+
             const now = new Date();
             const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}-${String(now.getSeconds()).padStart(2, '0')}`;
             const firstCellContent = grid.children[0].textContent.trim().split(' ')[0] || 'grid_data';
             const filename = `${firstCellContent}_${timestamp}.txt`;
 
             const blob = new Blob([data.join('\n')], { type: 'text/plain;charset=utf-8' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = filename;
-
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            saveAs(blob, filename);
         }
 
         // Load data from a TXT file
@@ -532,57 +702,68 @@
                 reader.onload = function () {
                     const lines = reader.result.split('\n');
                     column3Data = {};
-                    images = []; // Reset images array
+                    images = [];
 
+                    let isImageSection = false;
                     lines.forEach((line, index) => {
-                        const rowIndex = Math.floor(index / 2);
-                        const content = line.split('): ')[1];
+                        if (line.startsWith('Images:')) {
+                            isImageSection = true;
+                            return;
+                        }
 
-                        if (index % 2 === 0) {
-                            grid.children[rowIndex * 2].innerHTML = content;
+                        if (isImageSection) {
+                            const imageMatch = line.match(/^Image \d+: (.*)/);
+                            if (imageMatch) {
+                                images.push(imageMatch[1]);
+                            }
                         } else {
-                            const evenCells = content.split('. ').map(cell => cell === 'EMPTY.' ? '' : cell);
-                            column3Data[rowIndex] = evenCells;
+                            const rowIndex = Math.floor(index / 2);
+                            const content = line.split('): ')[1];
 
-                            for (let j = 0; j < evenCells.length; j++) {
-                                column3.children[rowIndex * 2 + 1 + j * 2].innerHTML = evenCells[j];
-                            }
+                            if (index % 2 === 0) {
+                                grid.children[rowIndex * 2].innerHTML = content;
+                            } else {
+                                const evenCells = content.split('. ').map(cell => cell === 'EMPTY.' ? '' : cell);
+                                column3Data[rowIndex] = evenCells;
 
-                            // Process content for Column 2 (same logic as before)
-                            let orderedContent = [];
-                            let naturalOrderContent = [];
-                            let naturalOrderIndex = 0;
-
-                            function stripHTMLTags(html) {
-                                const div = document.createElement('div');
-                                div.innerHTML = html;
-                                return div.textContent || div.innerText || '';
-                            }
-
-                            evenCells.forEach((cellContent) => {
-                                let plainTextContent = stripHTMLTags(cellContent);
-                                let match = plainTextContent.match(/^(\d+)\s*(.*)/);
-                                if (match) {
-                                    let orderIndex = parseInt(match[1]);
-                                    let contentWithoutPrefix = cellContent.replace(/^(\d+)\s*/, '');
-                                    orderedContent.push({ orderIndex, content: contentWithoutPrefix });
-                                } else if (cellContent !== "") {
-                                    naturalOrderContent.push(cellContent);
+                                for (let j = 0; j < evenCells.length; j++) {
+                                    column3.children[rowIndex * 2 + 1 + j * 2].innerHTML = evenCells[j];
                                 }
-                            });
 
-                            orderedContent.sort((a, b) => a.orderIndex - b.orderIndex);
+                                let orderedContent = [];
+                                let naturalOrderContent = [];
+                                let naturalOrderIndex = 0;
 
-                            naturalOrderContent.forEach((cellContent) => {
-                                orderedContent.push({ orderIndex: naturalOrderIndex++, content: cellContent });
-                            });
+                                function stripHTMLTags(html) {
+                                    const div = document.createElement('div');
+                                    div.innerHTML = html;
+                                    return div.textContent || div.innerText || '';
+                                }
 
-                            let finalOrderedContent = orderedContent.map(item => item.content);
-                            grid.children[rowIndex * 2 + 1].innerHTML = finalOrderedContent.join(' ');
+                                evenCells.forEach((cellContent) => {
+                                    let plainTextContent = stripHTMLTags(cellContent);
+                                    let match = plainTextContent.match(/^(\d+)\s*(.*)/);
+                                    if (match) {
+                                        let orderIndex = parseInt(match[1]);
+                                        let contentWithoutPrefix = cellContent.replace(/^(\d+)\s*/, '');
+                                        orderedContent.push({ orderIndex, content: contentWithoutPrefix });
+                                    } else if (cellContent !== "") {
+                                        naturalOrderContent.push(cellContent);
+                                    }
+                                });
+
+                                orderedContent.sort((a, b) => a.orderIndex - b.orderIndex);
+
+                                naturalOrderContent.forEach((cellContent) => {
+                                    orderedContent.push({ orderIndex: naturalOrderIndex++, content: cellContent });
+                                });
+
+                                let finalOrderedContent = orderedContent.map(item => item.content);
+                                grid.children[rowIndex * 2 + 1].innerHTML = finalOrderedContent.join(' ');
+                            }
                         }
                     });
                     
-                    // Rebuild images array and rebind thumbs after loading
                     document.querySelectorAll('.thumb').forEach(thumb => {
                         const src = thumb.dataset.src;
                         if (src && !images.includes(src)) {

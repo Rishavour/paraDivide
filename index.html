@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -7,23 +7,98 @@
     <style>
         * {
             box-sizing: border-box;
+        }
+
+        /* Define theme variables */
+        :root {
+            --font-family: 'Roboto', sans-serif;
+            --font-size: 23px;
+            --line-height: 1.4;
+            --text-color: #e6ddd1;
+            --editable-bg: #0d0d0d;
+            --readonly-bg: #202123;
+            --readonly-color: #d1cec9;
+            --border-color: #ccc;
+            --focus-border-color: rgba(255, 255, 255, 0.2);
+            --shadow-color: rgba(0, 0, 0, 1);
+            --toolbar-bg: black;
+            --toolbar-shadow: rgba(255, 0, 0, 0.2);
+            --overlay-bg: rgba(0, 0, 0, 0.85);
+            --link-color: #1e90ff;
+            --link-hover-color: #63b3ed;
+            --expanded-bg-gradient: linear-gradient(to right, rgba(0,0,0,0.5), rgba(0,0,0,0) 50px, rgba(0,0,0,0) calc(100% - 50px), rgba(0,0,0,0.5));
+            --expanded-column2-bg-gradient: linear-gradient(to right, rgba(0,0,0,0.7), rgba(0,0,0,0) 50px, rgba(0,0,0,0) calc(100% - 50px), rgba(0,0,0,0.7));
+        }
+
+        [data-theme="dark"] {
             color-scheme: dark;
         }
+
+        [data-theme="day"] {
+            --text-color: #333333;
+            --editable-bg: #ffffff;
+            --readonly-bg: #f5f5f5;
+            --readonly-color: #4a4a4a;
+            --border-color: #999999;
+            --focus-border-color: rgba(0, 0, 0, 0.2);
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --toolbar-bg: #ffffff;
+            --toolbar-shadow: rgba(0, 0, 0, 0.2);
+            --overlay-bg: rgba(255, 255, 255, 0.85);
+            --link-color: #0066cc;
+            --link-hover-color: #3399ff;
+            --expanded-bg-gradient: linear-gradient(to right, rgba(255,255,255,0.5), rgba(255,255,255,0) 50px, rgba(255,255,255,0) calc(100% - 50px), rgba(255,255,255,0.5));
+            --expanded-column2-bg-gradient: linear-gradient(to right, rgba(255,255,255,0.7), rgba(255,255,255,0) 50px, rgba(255,255,255,0) calc(100% - 50px), rgba(255,255,255,0.7));
+            color-scheme: light;
+        }
+
+        [data-theme="teal"] {
+            --text-color: #e6ddd1;
+            --editable-bg: #253542 ;
+            --readonly-bg: #141e28;
+            --readonly-color: #c4cbd0;
+            --border-color: #4a5e74;
+            --focus-border-color: rgba(196, 203, 208, 0.2);
+            --shadow-color: rgba(19, 29, 39, 0.5);
+            --toolbar-bg: #111b24;
+            --toolbar-shadow: rgba(19, 29, 39, 0.5);
+            --overlay-bg: rgba(19, 29, 39, 0.85);
+            --link-color: #4fc3f7;
+            --link-hover-color: #81d4fa;
+            --expanded-bg-gradient: linear-gradient(to right, rgba(19,29,39,0.5), rgba(19,29,39,0) 50px, rgba(19,29,39,0) calc(100% - 50px), rgba(19,29,39,0.5));
+            --expanded-column2-bg-gradient: linear-gradient(to right, rgba(19,29,39,0.7), rgba(19,29,39,0) 50px, rgba(19,29,39,0) calc(100% - 50px), rgba(19,29,39,0.7));
+            color-scheme: light;
+        }
+
+        [data-theme="teal"] .button-container button {
+            background-color: #36495a;
+            color: #ffffff;
+        }
+
         @font-face {
-          font-family: 'Roboto';
-          src: url('/home/amnesia/Persistent/Tor Browser/font/RobotoCondensed-VariableFont_wght.ttf')
+            font-family: 'Roboto';
+            src: url('/home/amnesia/Persistent/Tor Browser/font/RobotoCondensed-VariableFont_wght.ttf')
         }
 
         body {
-            font-family: 'Roboto', sans-serif;
-            font-size: 23px;
-            line-height: 1.4;
-            color: #e6ddd1;
+            font-family: var(--font-family);
+            font-size: var(--font-size);
+            line-height: var(--line-height);
+            color: var(--text-color);
             display: flex;
             justify-content: flex-start;
             height: 100vh;
             margin: 0;
             position: relative;
+            background-color: transparent; /* Ensure no white background in Dark/Day themes */
+        }
+
+        [data-theme="teal"] body {
+            background-color: #131d27; /* Specified background for Teal theme */
+        }
+
+        [data-theme="day"] body {
+            background-color: #f0f0f0; /* Light background for Day theme to match cells */
         }
 
         /* Container for columns 1 and 2 */
@@ -43,21 +118,21 @@
 
         .grid-item {
             padding: 10px;
-            border: 1px solid #ccc;
+            border: 1px solid var(--border-color);
         }
 
         .editable {
-            background-color: #0d0d0d;
-            box-shadow: inset 0 7px 12px rgba(0, 0, 0, 1);
+            background-color: var(--editable-bg);
+            box-shadow: inset 0 7px 12px var(--shadow-color);
         }
         .editable:focus {
             outline: none;
-            border: 1px solid rgba(255, 255, 255, 0.2); /* Very dim white border for focus */
+            border: 1px solid var(--focus-border-color); /* Very dim border for focus */
         }
 
         .readonly {
-            background-color: #202123;
-            color: #d1cec9;
+            background-color: var(--readonly-bg);
+            color: var(--readonly-color);
         }
 
         /* Fixed third column */
@@ -67,7 +142,7 @@
             max-height: 100vh;
             overflow-y: auto;
             padding: 3.5px;
-            border: 1px solid #ccc;
+            border: 1px solid var(--border-color);
             display: grid;
             grid-template-rows: repeat(100, auto);
             transition: all 0.3s ease;
@@ -81,7 +156,7 @@
             z-index: 1000;
             position: relative;
             padding: 50px 50px 0 50px;
-            background: linear-gradient(to right, rgba(0,0,0,0.5), rgba(0,0,0,0) 50px, rgba(0,0,0,0) calc(100% - 50px), rgba(0,0,0,0.5));
+            background: var(--expanded-bg-gradient);
         }
         .expanded-column-2 {
             width: 100% !important;
@@ -89,7 +164,7 @@
             z-index: 1000;
             position: relative;
             padding: 50px 50px 0 50px;
-            background: linear-gradient(to right, rgba(0,0,0,0.7), rgba(0,0,0,0) 50px, rgba(0,0,0,0) calc(100% - 50px), rgba(0,0,0,0.7));
+            background: var(--expanded-column2-bg-gradient);
         }
         .expanded-column-3 {
             width: 100% !important;
@@ -97,7 +172,7 @@
             z-index: 1000;
             position: relative;
             padding: 50px 50px 0 50px;
-            background: linear-gradient(to right, rgba(0,0,0,0.5), rgba(0,0,0,0) 50px, rgba(0,0,0,0) calc(100% - 50px), rgba(0,0,0,0.5));
+            background: var(--expanded-bg-gradient);
         }
 
         /* Hide other columns when one is expanded */
@@ -124,12 +199,12 @@
             flex-wrap: nowrap;
             gap: 0.5rem; /* Reduced gap to prevent wrapping */
             font-weight: 700;
-            background-color: black;
-            border: 1px solid #ccc;
+            background-color: var(--toolbar-bg);
+            border: 1px solid var(--border-color);
             padding: 0.2rem 0.5rem; /* Fixed padding in rem */
-            box-shadow: 3px 2px 2px rgba(255, 0, 0, 0.2);
+            box-shadow: 3px 2px 2px var(--toolbar-shadow);
             z-index: 2000;
-            min-width: 22rem; /* Reduced to fit content snugly */
+            min-width: 24rem; /* Increased to accommodate theme toggle button */
             font-size: 1rem; /* Base font size to counteract zoom */
         }
 
@@ -188,7 +263,7 @@
         #overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,.85);
+            background: var(--overlay-bg);
             display: none;
             align-items: center;
             justify-content: center;
@@ -198,18 +273,18 @@
         #overlay img {
             max-width: 90%;
             max-height: 90%;
-            box-shadow: 0 0 20px #000;
+            box-shadow: 0 0 20px var(--shadow-color);
         }
 
         /* Style for clickable links */
         a {
-            color: #1e90ff;
+            color: var(--link-color);
             text-decoration: underline;
             cursor: pointer;
         }
 
         a:hover {
-            color: #63b3ed;
+            color: var(--link-hover-color);
         }
 
         @media (max-width: 1200px) {
@@ -232,7 +307,7 @@
 
     <div class="button-container">
         <button onclick="formatText('bold')">𝐁</button>
-        <button onclick="formatText('italic')">𝐼</button>
+        <button onclick="formatText('italic')">𝐈</button>
         <input type="file" id="fileInput" style="display: none;" />
         
         <!-- Word and Sentence Counter -->
@@ -242,6 +317,7 @@
         <button onclick="saveData()">💾</button>
         <button onclick="snatchData()">✂️</button>
         <button onclick="loadData()">📂</button>
+        <button onclick="toggleTheme()">🌗</button>
         <div class="expand-group">
             <button class="expand-button" onclick="toggleExpand(1)">1</button>
             <button class="expand-button" onclick="toggleExpand(2)">2</button>
@@ -263,6 +339,16 @@
     <script>
         const grid = document.getElementById('grid');
         const column3 = document.getElementById('column-3');
+
+        // Theme toggle functionality
+        const themes = ['dark', 'day', 'teal'];
+        let currentThemeIndex = 0;
+
+        function toggleTheme() {
+            currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+            document.documentElement.setAttribute('data-theme', themes[currentThemeIndex]);
+        }
+
         let currentRow = null;
         let column3Data = {};
         const wordCountSpan = document.getElementById('wordCount');

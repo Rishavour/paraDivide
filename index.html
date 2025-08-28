@@ -2,9 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0"> -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>ParaDivide</title>
+    <title>Adaptive Grid Layout with Counters</title>
     <style>
         * {
             box-sizing: border-box;
@@ -24,59 +23,47 @@
             justify-content: flex-start;
             height: 100vh;
             margin: 0;
-            
         }
 
         /* Container for columns 1 and 2 */
         .grid-container {
             display: grid;
-            grid-template-columns: 1fr 1fr;  /* Two equal columns */
-            grid-template-rows: repeat(100, auto);  /* 100 rows with auto height */
-            gap: 0px; /*was 5 */
-            padding: 3.5px; /* was 10 */
-/*            background-color: #f5f5f5;*/
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: repeat(100, auto);
+            gap: 0px;
+            padding: 3.5px;
             overflow-y: auto;
-            width: 70%;  /* Set a percentage width so it doesn't get hidden by column 3 */
-            margin-right: 0px;  /* Small gap between column 2 and 3 */
+            width: 70%;
+            margin-right: 0px;
             max-height: 100vh;
         }
 
         .grid-item {
             padding: 10px;
             border: 1px solid #ccc;
-            /*display: flex;*/
-            /*align-items: center;*/
         }
 
         .editable {
             background-color: #0d0d0d;
-            box-shadow: inset 0 7px 12px rgba(0, 0, 0, 1); /* Sinking (inset shadow) effect */
-/*            background-color: #f9f9f9;*/
-/*            color-scheme: dark;*/
+            box-shadow: inset 0 7px 12px rgba(0, 0, 0, 1);
         }
 
         .readonly {
             background-color: #202123;
             color: #d1cec9;
-            /*box-shadow: 0 4px 6px rgba(255, 0, 0, 0.4);  Lifting (outset shadow) effect */
-
-/*            background-color: #e0e0e0;   #201F1D  #212121*/
-/*            color-scheme: dark;*/
         }
 
         /* Fixed third column */
         .column-3 {
             position: relative;
-            width: 30%;  /* Fixed width for column 3 */
+            width: 30%;
             max-height: 100vh;
             overflow-y: auto;
             padding: 3.5px;
-/*            background-color: #38271e; #f5f5f5; */
             border: 1px solid #ccc;
             display: grid;
-            grid-template-rows: repeat(100, auto);  /* 100 rows for column 3 */
+            grid-template-rows: repeat(100, auto);
         }
-
 
         /* Fixed buttons and counters on top */
         .button-container {
@@ -84,25 +71,20 @@
             transform: translate(-50%, -50%);
             top: 3%;
             left: 50%;
-/*            top: 10px;             left: 10px;            z-index: 10;*/
-
-
             display: flex;
             gap: 15px;
             font-weight: 700;
             background-color: black;
             border: 1px solid #ccc;
             padding: 0px 12px;
-            box-shadow: 3px 2px 2px rgba(255, 0, 0, 0.2); /* Lifting (outset shadow) effect */
-
+            box-shadow: 3px 2px 2px rgba(255, 0, 0, 0.2);
         }
 
         .button-container button {
             margin: 4px;
-/*            padding: 8px 12px;*/
-            font-size: 15px; /* Reducing font size */
+            font-size: 15px;
             font-weight: bold;
-            line-height: 1.2; /* Optional: Adjusting line-height for better text fitting */
+            line-height: 1.2;
         }
 
         /* Counter style */
@@ -111,32 +93,61 @@
             flex-direction: column;
             gap: 1px;
             font-size: 30px;
-/*            margin-top: 4px;*/
-
         }
         
         .column-1-cell {
 
         }
 
+        /* Image thumbnail styles */
+        .thumb {
+            display: inline-block;
+            width: 1.2em;
+            height: 1.2em;
+            cursor: pointer;
+            vertical-align: middle;
+            margin: 0 2px;
+        }
+        
+        .thumb::before {
+            content: "🖼️";
+            font-size: 1em;
+        }
+
+        /* Overlay styles */
+        #overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        #overlay img {
+            max-width: 90%;
+            max-height: 90%;
+            box-shadow: 0 0 20px #000;
+        }
 
         @media (max-width: 1200px) {
-            /* Adjust layout for smaller screens, ensuring column 3 doesn't overlap */
             body {
                 flex-direction: column;
             }
 
             .grid-container, .column-3 {
-/*                margin-top: 30px;*/
-                width: 100%;  /* Stack columns vertically on smaller screens */
+                width: 100%;
                 height: 100%;
                 margin-right: 0;
             }
         }
-
     </style>
 </head>
 <body>
+
+    <!-- Image overlay -->
+    <div id="overlay" onclick="this.style.display='none'"><img></div>
 
     <div class="button-container">
         <button onclick="formatText('bold')">Bold</button>
@@ -166,9 +177,15 @@
         const grid = document.getElementById('grid');
         const column3 = document.getElementById('column-3');
         let currentRow = null;
-        let column3Data = {}; // To store data for even cells in Column 3
+        let column3Data = {};
         const wordCountSpan = document.getElementById('wordCount');
         const sentenceCountSpan = document.getElementById('sentenceCount');
+
+        // Image viewer variables
+        let overlay = document.getElementById("overlay");
+        let big = overlay.querySelector("img");
+        let images = [];
+        let current = 0;
 
         // Word and sentence limits
         const maxWordsColumn1 = 1000;
@@ -176,12 +193,10 @@
         const maxWordsColumn3Even = 1000;
         const maxSentencesColumn3Even = 50;
 
-
         // Toolbar buttons for formatting (bold and italic)
         function formatText(command) {
             document.execCommand(command, false, null);
         }
-
 
         // Function to count words in a string
         function countWords(text) {
@@ -223,6 +238,109 @@
             }
         }
 
+        // Image viewer functions
+        function openImage(imageSrc) {
+            // Find the image in our images array or add it
+            let index = images.indexOf(imageSrc);
+            if (index === -1) {
+                images.push(imageSrc);
+                index = images.length - 1;
+            }
+            
+            current = index;
+            big.src = images[current];
+            overlay.style.display = "flex";
+        }
+
+        // Rebind all thumb click handlers
+        function rebindThumbs() {
+            document.querySelectorAll('.thumb').forEach(thumb => {
+                // Remove existing handler to avoid duplicates
+                thumb.onclick = null;
+                
+                // Add click handler
+                thumb.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const imageSrc = this.dataset.src;
+                    if (imageSrc) {
+                        openImage(imageSrc);
+                    }
+                };
+            });
+        }
+
+        // Handle paste events for images
+        document.addEventListener("paste", e => {
+            let hasImage = false;
+            
+            [...e.clipboardData.items].forEach(item => {
+                if (item.type.startsWith("image")) {
+                    hasImage = true;
+                    e.preventDefault(); // Prevent default paste behavior
+                    
+                    const file = item.getAsFile();
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(event) {
+                        const imageSrc = event.target.result; // Base64 data URL
+                        
+                        // Create thumb span instead of img
+                        const thumbSpan = document.createElement('span');
+                        thumbSpan.className = 'thumb';
+                        thumbSpan.dataset.src = imageSrc;
+                        
+                        // Insert using execCommand with immediate cursor positioning
+                        const thumbHtml = `<span class="thumb" data-src="${imageSrc}"></span>&nbsp;`;
+                        document.execCommand('insertHTML', false, thumbHtml);
+                        
+                        // Force cursor to move to the end after insertion
+                        setTimeout(() => {
+                            const selection = window.getSelection();
+                            const activeElement = document.activeElement;
+                            
+                            if (activeElement && activeElement.contentEditable === 'true') {
+                                // Move cursor to the very end of the active element
+                                const range = document.createRange();
+                                range.selectNodeContents(activeElement);
+                                range.collapse(false); // Collapse to end
+                                
+                                selection.removeAllRanges();
+                                selection.addRange(range);
+                            }
+                        }, 10);
+                        
+                        // Add to images array and rebind
+                        if (!images.includes(imageSrc)) {
+                            images.push(imageSrc);
+                        }
+                        rebindThumbs();
+                    };
+                    
+                    reader.readAsDataURL(file); // Convert to base64
+                }
+            });
+            
+            if (hasImage) {
+                e.preventDefault(); // Prevent the default paste if we handled an image
+            }
+        });
+
+        // Keyboard navigation for image overlay
+        document.addEventListener("keydown", e => {
+            if (overlay.style.display === "flex") {
+                if (e.key === "Escape") overlay.style.display = "none";
+                if (e.key === "ArrowRight") {
+                    current = (current + 1) % images.length;
+                    big.src = images[current];
+                }
+                if (e.key === "ArrowLeft") {
+                    current = (current - 1 + images.length) % images.length;
+                    big.src = images[current];
+                }
+            }
+        });
+
         // Generate 100 rows, 2 columns in the grid (Column 1 and 2)
         for (let i = 0; i < 100; i++) {
             // Column 1 (Editable)
@@ -241,40 +359,29 @@
             // Generate cells for Column 3 (fixed)
             const column3OddCell = document.createElement('div');
             column3OddCell.classList.add('grid-item', 'readonly');
-            column3OddCell.contentEditable = false; // Odd cells are uneditable
+            column3OddCell.contentEditable = false;
             column3OddCell.dataset.row = i;
             column3.appendChild(column3OddCell);
 
             const column3EvenCell = document.createElement('div');
             column3EvenCell.classList.add('grid-item', 'editable');
-            column3EvenCell.contentEditable = true; // Even cells are editable
+            column3EvenCell.contentEditable = true;
             column3EvenCell.dataset.row = i;
             column3.appendChild(column3EvenCell);
-
-
-
-
-
-
-
-
-
-
 
             // Clicking a cell in Column 1 populates odd cells in Column 3
             editableCell.addEventListener('focus', function () {
                 currentRow = i;
-                updateCounters(editableCell.textContent); // Update counters for Column 1
+                updateCounters(editableCell.textContent);
                 const sentences = editableCell.innerHTML.split(/\.\s*/).filter(s => s.trim() !== '');
                 
                 // Clear all Column 3 content first
                 for (let j = 0; j < 100 * 2; j++) {
-                    column3.children[j].textContent = "";
+                    column3.children[j].innerHTML = "";
                 }
 
                 // Update the odd cells in Column 3 with sentences from Column 1
                 for (let j = 0; j < sentences.length; j++) {
-                    // If it's the last sentence or there's only one sentence, don't add a period
                     if (j === sentences.length - 1) {
                         column3.children[j * 2].innerHTML = sentences[j].trim();
                     } else {
@@ -288,50 +395,34 @@
                         column3.children[j * 2 + 1].innerHTML = column3Data[currentRow][j];
                     }
                 }
+                
+                // Rebind thumbs after content update
+                rebindThumbs();
             });
-
-
-
-
-
-
-
-
-
-
-
 
             // Limit input for Column 1 (Editable)
             editableCell.addEventListener('input', function () {
-                enforceLimits(editableCell, true); // Enforce limits for Column 1
-                updateCounters(editableCell.textContent); // Update counters for Column 1
+                enforceLimits(editableCell, true);
+                updateCounters(editableCell.textContent);
+                // Rebind thumbs after input
+                rebindThumbs();
             });
 
             // Select and show counters for even cells in Column 3 when clicked
             column3EvenCell.addEventListener('focus', function () {
-                updateCounters(column3EvenCell.textContent); // Show counter when clicked
+                updateCounters(column3EvenCell.textContent);
             });
-
-
-
-
-
-
-
-
-
-
 
             // Limit input and update for Column 3 even cells
             column3EvenCell.addEventListener('input', function () {
-                enforceLimits(column3EvenCell, false); // Enforce limits for Column 3 even cells
-                updateCounters(column3EvenCell.textContent); // Update counters for Column 3 even cells
+                enforceLimits(column3EvenCell, false);
+                updateCounters(column3EvenCell.textContent);
                 
                 if (currentRow !== null) {
-                    let evenCellsContent = []; // Store the content of even cells
-                    let orderedContent = []; // Placeholder for content with prefixes, allow duplicates next to each other
-                    let secondColumnContent = []; // Content for column 2 without prefixes
-                    let naturalOrderIndex = 0; // For placing unprefixed content in natural order
+                    let evenCellsContent = [];
+                    let orderedContent = [];
+                    let secondColumnContent = [];
+                    let naturalOrderIndex = 0;
 
                     // Helper function to strip HTML tags for prefix detection
                     function stripHTMLTags(html) {
@@ -342,135 +433,68 @@
 
                     // First pass: Process the even cells for Column 3
                     for (let j = 1; j < 100 * 2; j += 2) {
-                        let content = column3.children[j].innerHTML.trim(); // Use innerHTML to preserve bold/italic formatting
-                        evenCellsContent.push(content); // Store as it is in column 3, with formatting
+                        let content = column3.children[j].innerHTML.trim();
+                        evenCellsContent.push(content);
 
-                        // Strip HTML tags to check for prefix (number followed by a space)
                         let plainTextContent = stripHTMLTags(content);
                         let match = plainTextContent.match(/^(\d+)\s*(.*)/);
                         if (match) {
-                            let orderIndex = parseInt(match[1]); // Use prefix as the order index for Column 2
-                            let contentWithoutPrefix = content.replace(/^(\d+)\s*/, ''); // Remove the prefix from the content
-                            orderedContent.push({ orderIndex, content: contentWithoutPrefix }); // Allow duplicates, keep them in sequence
+                            let orderIndex = parseInt(match[1]);
+                            let contentWithoutPrefix = content.replace(/^(\d+)\s*/, '');
+                            orderedContent.push({ orderIndex, content: contentWithoutPrefix });
                         } else {
-                            secondColumnContent.push(content); // Unprefixed content for natural order (with formatting)
+                            secondColumnContent.push(content);
                         }
                     }
 
-                    // Sort the prefixed content by their prefix numbers to ensure correct order
                     orderedContent.sort((a, b) => a.orderIndex - b.orderIndex);
 
                     // Second pass: Assign remaining cells to natural order positions
                     for (let j = 1; j < 100 * 2; j += 2) {
-                        let content = column3.children[j].innerHTML.trim(); // Use innerHTML to preserve formatting
+                        let content = column3.children[j].innerHTML.trim();
                         if (content !== "") {
                             let plainTextContent = stripHTMLTags(content);
                             let match = plainTextContent.match(/^(\d+)\s*(.*)/);
                             if (!match) {
-                                // Find the next available natural order index
                                 while (orderedContent[naturalOrderIndex] !== undefined) {
                                     naturalOrderIndex++;
                                 }
-                                // Place unprefixed content in the next natural order position (with formatting)
                                 orderedContent.push({ orderIndex: naturalOrderIndex, content });
-
-                                // Remove this content from secondColumnContent to avoid duplicates
                                 secondColumnContent = secondColumnContent.filter(item => item !== content);
                             }
                         }
                     }
 
-                    // Flatten the orderedContent to extract only the content (in sorted order)
                     let finalOrderedContent = orderedContent.map(item => item.content).concat(secondColumnContent);
 
                     // Update the second column with combined content, preserving formatting
                     grid.children[currentRow * 2 + 1].innerHTML = finalOrderedContent.length > 0 ? finalOrderedContent.join(' ') : '';
 
-                    // Save the content of even cells (unsorted) for the current row in column3Data
+                    // Save the content of even cells for the current row in column3Data
                     column3Data[currentRow] = evenCellsContent;
+                    
+                    // Rebind thumbs after content update
+                    rebindThumbs();
                 }
             });
-
-
-
-
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        // Save editable data to a TXT file, keeping track of empty even cells with 'EMPTY.'
+        // Save editable data to a TXT file
         function saveData() {
             const data = [];
 
             for (let i = 0; i < 100; i++) {
-                // Save content from Column 1 (editable)
                 const column1Content = grid.children[i * 2].innerHTML;
 
-                // Save even cells content from Column 3
                 if (column3Data[i]) {
-                    let lastFilledIndex = -1; // Track the last filled even cell index
+                    let lastFilledIndex = -1;
                     
-                    // Find the last filled even cell
                     for (let j = 0; j < column3Data[i].length; j++) {
                         if (column3Data[i][j].trim() !== '') {
                             lastFilledIndex = j;
                         }
                     }
 
-                    // Collect even cell content, marking empty ones as 'EMPTY.'
                     let evenCellsContent = [];
                     for (let j = 0; j <= lastFilledIndex; j++) {
                         evenCellsContent.push(column3Data[i][j].trim() !== '' ? column3Data[i][j] : 'EMPTY.');
@@ -478,19 +502,16 @@
                     data.push(`Row ${i + 1} Column 1): ${column1Content}`);
                     data.push(`Row ${i + 1} Column 3 (Even): ${evenCellsContent.join('. ')}`);
                 } else {
-                    // If no even cells data exists, consider it empty
                     data.push(`Row ${i + 1} Column 1): ${column1Content}`);
                     data.push(`Row ${i + 1} Column 3 (Even): EMPTY.`);
                 }
             }
 
-            // Generate a timestamped filename
             const now = new Date();
             const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}-${String(now.getSeconds()).padStart(2, '0')}`;
             const firstCellContent = grid.children[0].textContent.trim().split(' ')[0] || 'grid_data';
             const filename = `${firstCellContent}_${timestamp}.txt`;
 
-            // Create a Blob and trigger download
             const blob = new Blob([data.join('\n')], { type: 'text/plain;charset=utf-8' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -501,74 +522,7 @@
             document.body.removeChild(link);
         }
 
-
-
-        /*function saveData() {
-            const data = [];
-
-            for (let i = 0; i < 100; i++) {
-                // Save content from Column 1 (editable), cleaning up any HTML tags
-                const column1Content = grid.children[i * 2].textContent.trim();
-
-                if (column3Data[i]) {
-                    let lastFilledIndex = -1;
-
-                    // Find the last filled even cell
-                    for (let j = 0; j < column3Data[i].length; j++) {
-                        if (column3Data[i][j].trim() !== '') {
-                            lastFilledIndex = j;
-                        }
-                    }
-
-                    // Collect even cell content, marking empty ones as 'EMPTY.'
-                    let evenCellsContent = [];
-                    for (let j = 0; j <= lastFilledIndex; j++) {
-                        evenCellsContent.push(column3Data[i][j].trim() !== '' ? column3Data[i][j] : 'EMPTY.');
-                    }
-
-                    // Add data with explicit newlines between columns
-                    data.push(`Row ${i + 1} Column 1: ${column1Content}`);
-                    data.push(`Row ${i + 1} Column 3 (Even): ${evenCellsContent.join('.\n')}`);
-                } else {
-                    data.push(`Row ${i + 1} Column 1: ${column1Content}`);
-                    data.push(`Row ${i + 1} Column 3 (Even): EMPTY.`);
-                }
-            }
-
-            // Timestamped filename
-            const now = new Date();
-            const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}-${String(now.getSeconds()).padStart(2, '0')}`;
-            const firstCellContent = grid.children[0].textContent.trim().split(' ')[0] || 'grid_data';
-            const filename = `${firstCellContent}_${timestamp}.txt`;
-
-            // Blob with \r\n for cross-platform newline handling
-            const blob = new Blob([data.join('\r\n')], { type: 'text/plain;charset=utf-8' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = filename;
-
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        // Load data from a TXT file, restoring empty even cells from 'EMPTY.'
+        // Load data from a TXT file
         function loadData() {
             const input = document.getElementById('fileInput');
             input.click();
@@ -577,33 +531,28 @@
                 const reader = new FileReader();
                 reader.onload = function () {
                     const lines = reader.result.split('\n');
-                    column3Data = {}; // Reset column3Data
+                    column3Data = {};
+                    images = []; // Reset images array
 
                     lines.forEach((line, index) => {
-                        const rowIndex = Math.floor(index / 2); // 2 lines per row
-                        const content = line.split('): ')[1]; // Extract content after "Row X: "
+                        const rowIndex = Math.floor(index / 2);
+                        const content = line.split('): ')[1];
 
                         if (index % 2 === 0) {
-                            // Load content for Column 1
                             grid.children[rowIndex * 2].innerHTML = content;
                         } else {
-                            // Load even cells content for Column 3
-                            const evenCells = content.split('. ').map(cell => cell === 'EMPTY.' ? '' : cell); // Restore empty cells as blank
-
-                            // Save the even cells data for the current row
+                            const evenCells = content.split('. ').map(cell => cell === 'EMPTY.' ? '' : cell);
                             column3Data[rowIndex] = evenCells;
 
-                            // Populate the third column's even cells in their exact positions
                             for (let j = 0; j < evenCells.length; j++) {
                                 column3.children[rowIndex * 2 + 1 + j * 2].innerHTML = evenCells[j];
                             }
 
-                            // Now update Column 2 based on even cells content (prefix-based and natural order logic)
-                            let orderedContent = []; // Allow duplicate prefixes to be stored sequentially
-                            let naturalOrderContent = []; // Store unprefixed content
+                            // Process content for Column 2 (same logic as before)
+                            let orderedContent = [];
+                            let naturalOrderContent = [];
                             let naturalOrderIndex = 0;
 
-                            // Helper function to strip HTML tags for prefix detection
                             function stripHTMLTags(html) {
                                 const div = document.createElement('div');
                                 div.innerHTML = html;
@@ -611,139 +560,91 @@
                             }
 
                             evenCells.forEach((cellContent) => {
-                                // Strip HTML tags to check for prefix (number followed by a space)
                                 let plainTextContent = stripHTMLTags(cellContent);
-                                let match = plainTextContent.match(/^(\d+)\s*(.*)/); // Check if there's a prefix
+                                let match = plainTextContent.match(/^(\d+)\s*(.*)/);
                                 if (match) {
-                                    let orderIndex = parseInt(match[1]); // Use the prefix as the order index
-                                    let contentWithoutPrefix = cellContent.replace(/^(\d+)\s*/, ''); // Remove the prefix for Column 2
-                                    orderedContent.push({ orderIndex, content: contentWithoutPrefix }); // Store with order index, allow duplicates
+                                    let orderIndex = parseInt(match[1]);
+                                    let contentWithoutPrefix = cellContent.replace(/^(\d+)\s*/, '');
+                                    orderedContent.push({ orderIndex, content: contentWithoutPrefix });
                                 } else if (cellContent !== "") {
-                                    naturalOrderContent.push(cellContent); // Collect unprefixed content for natural ordering
+                                    naturalOrderContent.push(cellContent);
                                 }
                             });
 
-                            // Sort the prefixed content by their prefix numbers to ensure correct order
                             orderedContent.sort((a, b) => a.orderIndex - b.orderIndex);
 
-                            // Assign unprefixed cells to natural order positions
                             naturalOrderContent.forEach((cellContent) => {
                                 orderedContent.push({ orderIndex: naturalOrderIndex++, content: cellContent });
                             });
 
-                            // Flatten the orderedContent to extract only the content (in sorted order)
                             let finalOrderedContent = orderedContent.map(item => item.content);
-
-                            // Update Column 2 with combined content (including duplicates for same prefixes)
                             grid.children[rowIndex * 2 + 1].innerHTML = finalOrderedContent.join(' ');
                         }
                     });
+                    
+                    // Rebuild images array and rebind thumbs after loading
+                    document.querySelectorAll('.thumb').forEach(thumb => {
+                        const src = thumb.dataset.src;
+                        if (src && !images.includes(src)) {
+                            images.push(src);
+                        }
+                    });
+                    rebindThumbs();
                 };
                 reader.readAsText(file);
             });
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        // Function to scroll the focused editable cell into view when the keyboard appears
+        // Scroll functions
         function adjustEditablePositionOnFocus() {
             const editables = document.querySelectorAll('.editable');
-
             editables.forEach(editable => {
                 editable.addEventListener('focus', () => {
                     setTimeout(() => {
-                        // Scroll the container (grid) so that the editable is visible
                         editable.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }, 300); // Delay for keyboard appearance
+                    }, 300);
                 });
             });
         }
-        // Ensure the event listeners are attached after DOM content is loaded
-        window.addEventListener('DOMContentLoaded', adjustEditablePositionOnFocus);      
-              
-              
-        // Function to scroll the column-3 to top if column-1 cell is focused:
+
         function adjustColumnThreeToTop() {
             const editables = document.querySelectorAll('.column-1-cell');
             editables.forEach(editable => {
                 editable.addEventListener('focus', () => {
                     setTimeout(() => {
-                        // Smoothly scroll Column 3 back to the start
-                        const column3 = document.querySelector('.column-3'); // Select the third column
+                        const column3 = document.querySelector('.column-3');
                         if (column3) {
                             column3.scrollTo({
-                                top: 0,           // Scroll to the top (start)
-                                behavior: 'smooth'  // Smooth scrolling effect
+                                top: 0,
+                                behavior: 'smooth'
                             });
                         }
-                    }, 300); // Delay for keyboard appearance
+                    }, 300);
                 });
             });
         }
-        // Ensure the event listeners are attached after DOM content is loaded
+
+        window.addEventListener('DOMContentLoaded', adjustEditablePositionOnFocus);      
         window.addEventListener('DOMContentLoaded', adjustColumnThreeToTop);     
         
-        
-        
-        
-        // Optional: Handle focusout event to scroll back
         document.addEventListener('focusout', function(e) {
             if (e.target.classList.contains('editable')) {
                 setTimeout(function() {
-                    window.scrollTo(0, 0); // Scroll back to the top after keyboard hides
+                    window.scrollTo(0, 0);
                 }, 300);
             }
         });
 
-        // iOS specific handling (optional)
         if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
             document.addEventListener('focusin', (e) => {
                 if (e.target.classList.contains('editable')) {
-                    window.scrollTo(0, e.target.offsetTop - 50); // Adjust offset as needed
+                    window.scrollTo(0, e.target.offsetTop - 50);
                 }
             });
         }
 
-
+        // Initial rebind on page load
+        document.addEventListener('DOMContentLoaded', rebindThumbs);
     </script>
-
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

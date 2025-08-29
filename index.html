@@ -808,7 +808,8 @@
 
             const now = new Date();
             const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}-${String(now.getSeconds()).padStart(2, '0')}`;
-            const filename = `snatch_${timestamp}.txt`;
+            const firstCellContent = grid.children[0].textContent.trim().split(' ')[0] || 'grid_data';
+            const filename = `snatch_${firstCellContent}_${timestamp}.txt`;
 
             const blob = new Blob([data.join('\n')], { type: 'text/plain;charset=utf-8' });
             saveAs(blob, filename);
@@ -959,3 +960,4 @@
     </script>
 </body>
 </html>
+

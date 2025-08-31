@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>ParaDivide</title>
+    <title>Adaptive Grid Layout with Counters</title>
     <style>
         * {
             box-sizing: border-box;
@@ -189,6 +189,15 @@
             display: none;
         }
 
+        /* Hide column 2 by default */
+        .grid-container.column-2-hidden .grid-item:nth-child(even) {
+            display: none;
+        }
+
+        .grid-container.column-2-hidden {
+            grid-template-columns: 1fr;
+        }
+
         /* Fixed buttons and counters on top */
         .button-container {
             position: fixed;
@@ -204,7 +213,7 @@
             padding: 0.2rem 0.5rem; /* Fixed padding in rem */
             box-shadow: 3px 2px 2px var(--toolbar-shadow);
             z-index: 2000;
-            min-width: 24rem; /* Increased to accommodate theme toggle button */
+            min-width: 26rem; /* Adjusted to accommodate new button */
             font-size: 1rem; /* Base font size to counteract zoom */
         }
 
@@ -322,11 +331,12 @@
             <button class="expand-button" onclick="toggleExpand(1)">1</button>
             <button class="expand-button" onclick="toggleExpand(2)">2</button>
             <button class="expand-button" onclick="toggleExpand(3)">3</button>
+            <button class="expand-button" onclick="toggleColumn2()">👁️</button>
         </div>
     </div>
 
     <!-- First and Second Column -->
-    <div class="grid-container" id="grid">
+    <div class="grid-container column-2-hidden" id="grid">
         <!-- Columns 1 and 2 will be generated via JavaScript -->
     </div>
 
@@ -368,6 +378,17 @@
 
         let currentExpanded = null;
 
+        // Function to toggle column 2 visibility
+        function toggleColumn2() {
+            const gridContainer = document.getElementById('grid');
+            gridContainer.classList.toggle('column-2-hidden');
+            if (!gridContainer.classList.contains('column-2-hidden')) {
+                gridContainer.style.gridTemplateColumns = '1fr 1fr';
+            } else {
+                gridContainer.style.gridTemplateColumns = '1fr';
+            }
+        }
+
         // Function to toggle column expansion
         function toggleExpand(column) {
             const gridContainer = document.getElementById('grid');
@@ -377,12 +398,12 @@
                 // Reset to default
                 currentExpanded = null;
                 gridContainer.classList.remove('expanded-column-1', 'expanded-column-2', 'show-only-column-1', 'show-only-column-2', 'column-hidden');
-                gridContainer.style.gridTemplateColumns = '1fr 1fr';
+                gridContainer.style.gridTemplateColumns = gridContainer.classList.contains('column-2-hidden') ? '1fr' : '1fr 1fr';
                 column3Container.classList.remove('expanded-column-3', 'column-hidden');
             } else {
                 // Reset first
                 gridContainer.classList.remove('expanded-column-1', 'expanded-column-2', 'show-only-column-1', 'show-only-column-2', 'column-hidden');
-                gridContainer.style.gridTemplateColumns = '1fr 1fr';
+                gridContainer.style.gridTemplateColumns = gridContainer.classList.contains('column-2-hidden') ? '1fr' : '1fr 1fr';
                 column3Container.classList.remove('expanded-column-3', 'column-hidden');
 
                 currentExpanded = column;
@@ -395,6 +416,7 @@
                     gridContainer.classList.add('expanded-column-2', 'show-only-column-2');
                     gridContainer.style.gridTemplateColumns = '1fr';
                     column3Container.classList.add('column-hidden');
+                    gridContainer.classList.remove('column-2-hidden'); // Ensure column 2 is visible
                 } else if (column === 3) {
                     column3Container.classList.add('expanded-column-3');
                     gridContainer.classList.add('column-hidden');
@@ -677,6 +699,7 @@
                     }
                 }
                 
+                updateColumn2();
                 rebindThumbs();
             });
 
@@ -684,6 +707,7 @@
                 enforceLimits(editableCell, true);
                 updateCounters(editableCell.textContent);
                 processURLsInContent(editableCell);
+                updateColumn2();
                 rebindThumbs();
             });
 
@@ -744,9 +768,67 @@
                     grid.children[currentRow * 2 + 1].innerHTML = finalOrderedContent.length > 0 ? finalOrderedContent.join(' ') : '';
                     column3Data[currentRow] = evenCellsContent;
                     
+                    updateColumn2();
                     rebindThumbs();
                 }
             });
+        }
+
+        // Function to update Column 2 based on Column 3 odd and even cells
+        function updateColumn2() {
+            if (currentRow !== null) {
+                let orderedContent = [];
+                let secondColumnContent = [];
+                let naturalOrderIndex = 0;
+
+                function stripHTMLTags(html) {
+                    const div = document.createElement('div');
+                    div.innerHTML = html;
+                    return div.textContent || div.innerText || '';
+                }
+
+                for (let j = 0; j < 100; j++) {
+                    let oddContent = column3.children[j * 2].innerHTML.trim();
+                    let evenContent = column3.children[j * 2 + 1].innerHTML.trim();
+                    let contentToUse = evenContent !== "" ? evenContent : oddContent;
+
+                    if (contentToUse === "") continue;
+
+                    let plainTextContent = stripHTMLTags(contentToUse);
+                    let match = plainTextContent.match(/^(\d+)\s*(.*)/);
+                    if (match) {
+                        let orderIndex = parseInt(match[1]);
+                        let contentWithoutPrefix = contentToUse.replace(/^(\d+)\s*/, '');
+                        orderedContent.push({ orderIndex, content: contentWithoutPrefix });
+                    } else {
+                        secondColumnContent.push(contentToUse);
+                    }
+                }
+
+                orderedContent.sort((a, b) => a.orderIndex - b.orderIndex);
+
+                for (let j = 0; j < 100; j++) {
+                    let oddContent = column3.children[j * 2].innerHTML.trim();
+                    let evenContent = column3.children[j * 2 + 1].innerHTML.trim();
+                    let contentToUse = evenContent !== "" ? evenContent : oddContent;
+
+                    if (contentToUse === "") continue;
+
+                    let plainTextContent = stripHTMLTags(contentToUse);
+                    let match = plainTextContent.match(/^(\d+)\s*(.*)/);
+                    if (!match) {
+                        while (orderedContent[naturalOrderIndex] !== undefined) {
+                            naturalOrderIndex++;
+                        }
+                        orderedContent.push({ orderIndex: naturalOrderIndex, content: contentToUse });
+                        secondColumnContent = secondColumnContent.filter(item => item !== contentToUse);
+                    }
+                }
+
+                let finalOrderedContent = orderedContent.map(item => item.content).concat(secondColumnContent);
+                grid.children[currentRow * 2 + 1].innerHTML = finalOrderedContent.length > 0 ? finalOrderedContent.join(' ') : '';
+                column3Data[currentRow] = Array(100).fill().map((_, j) => column3.children[j * 2 + 1].innerHTML.trim());
+            }
         }
 
         // Save editable data to a TXT file
@@ -854,13 +936,11 @@
                             if (index % 2 === 0) {
                                 grid.children[rowIndex * 2].innerHTML = content;
                             } else {
-                                const evenCells = content.split('. ').map(cell => cell === 'EMPTY.' ? '' : cell);
+                                let evenCells = content.split('. ').map(cell => cell === 'EMPTY.' ? '' : cell);
                                 column3Data[rowIndex] = evenCells;
 
-                                for (let j = 0; j < evenCells.length; j++) {
-                                    column3.children[rowIndex * 2 + 1 + j * 2].innerHTML = evenCells[j];
-                                }
-
+                                // Compute column 2 on load
+                                const sentences = splitSentencesWithURLs(grid.children[rowIndex * 2].innerHTML);
                                 let orderedContent = [];
                                 let naturalOrderContent = [];
                                 let naturalOrderIndex = 0;
@@ -871,22 +951,44 @@
                                     return div.textContent || div.innerText || '';
                                 }
 
-                                evenCells.forEach((cellContent) => {
+                                for (let j = 0; j < sentences.length; j++) {
+                                    let odd = sentences[j];
+                                    if (j < sentences.length - 1) odd += '.';
+                                    let even = evenCells[j] ? evenCells[j].trim() : '';
+                                    let cellContent = even !== '' ? even : odd;
+
+                                    if (cellContent === '') continue;
+
                                     let plainTextContent = stripHTMLTags(cellContent);
                                     let match = plainTextContent.match(/^(\d+)\s*(.*)/);
                                     if (match) {
                                         let orderIndex = parseInt(match[1]);
                                         let contentWithoutPrefix = cellContent.replace(/^(\d+)\s*/, '');
                                         orderedContent.push({ orderIndex, content: contentWithoutPrefix });
-                                    } else if (cellContent !== "") {
+                                    } else {
                                         naturalOrderContent.push(cellContent);
                                     }
-                                });
+                                }
+
+                                // Handle extra even cells if any
+                                for (let j = sentences.length; j < evenCells.length; j++) {
+                                    let cellContent = evenCells[j].trim();
+                                    if (cellContent === '') continue;
+                                    let plainTextContent = stripHTMLTags(cellContent);
+                                    let match = plainTextContent.match(/^(\d+)\s*(.*)/);
+                                    if (match) {
+                                        let orderIndex = parseInt(match[1]);
+                                        let contentWithoutPrefix = cellContent.replace(/^(\d+)\s*/, '');
+                                        orderedContent.push({ orderIndex, content: contentWithoutPrefix });
+                                    } else {
+                                        naturalOrderContent.push(cellContent);
+                                    }
+                                }
 
                                 orderedContent.sort((a, b) => a.orderIndex - b.orderIndex);
 
-                                naturalOrderContent.forEach((cellContent) => {
-                                    orderedContent.push({ orderIndex: naturalOrderIndex++, content: cellContent });
+                                naturalOrderContent.forEach(content => {
+                                    orderedContent.push({ orderIndex: naturalOrderIndex++, content });
                                 });
 
                                 let finalOrderedContent = orderedContent.map(item => item.content);
@@ -960,4 +1062,3 @@
     </script>
 </body>
 </html>
-

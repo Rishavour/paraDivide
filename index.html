@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>paraDivide</title>
+    <title>Adaptive Grid Layout with Counters</title>
     <style>
         * {
             box-sizing: border-box;
@@ -250,8 +250,20 @@
             white-space: nowrap; /* Prevent wrapping */
         }
 
-        .column-1-cell {
-        }
+/* Add a hidden grab handle on the left side of first column cells */
+.column-1-cell {
+    position: relative;
+}
+
+.column-1-cell::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 25px; /* small invisible grab area */
+    cursor: grab;
+}
 
         /* Image thumbnail styles */
         .thumb {
@@ -774,6 +786,66 @@
             });
         }
 
+// Drag & drop reorder logic for first column
+let dragSrcRow = null;
+
+function handleDragStart(e) {
+    // activate only if mouse is inside the right 8px
+    if (e.offsetX >= this.offsetWidth - 25) {
+        dragSrcRow = this.dataset.row;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', dragSrcRow);
+        this.style.opacity = '0.4';
+    } else {
+        e.preventDefault(); // don’t allow drag from middle text
+    }
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    return false;
+}
+
+function handleDrop(e) {
+    e.stopPropagation();
+    const srcRow = parseInt(e.dataTransfer.getData('text/plain'));
+    const targetRow = parseInt(this.dataset.row);
+    if (srcRow === targetRow) return;
+
+    // Swap content of column1, column2, and column3 rows
+    function swapCells(rowA, rowB, container, multiplier) {
+        const idxA = rowA * multiplier;
+        const idxB = rowB * multiplier;
+        for (let k = 0; k < multiplier; k++) {
+            let temp = container.children[idxA + k].innerHTML;
+            container.children[idxA + k].innerHTML = container.children[idxB + k].innerHTML;
+            container.children[idxB + k].innerHTML = temp;
+        }
+    }
+
+    swapCells(srcRow, targetRow, grid, 2);     // swap col1 + col2
+    swapCells(srcRow, targetRow, column3, 2);  // swap col3 (odd+even)
+
+    // Swap stored column3Data
+    const tempData = column3Data[srcRow];
+    column3Data[srcRow] = column3Data[targetRow];
+    column3Data[targetRow] = tempData;
+}
+
+function handleDragEnd(e) {
+    this.style.opacity = '1';
+}
+
+// Enable drag/drop on first column cells
+document.querySelectorAll('.column-1-cell').forEach(cell => {
+    cell.setAttribute('draggable', 'true');
+    cell.addEventListener('dragstart', handleDragStart);
+    cell.addEventListener('dragover', handleDragOver);
+    cell.addEventListener('drop', handleDrop);
+    cell.addEventListener('dragend', handleDragEnd);
+});
+
         // Function to update Column 2 based on Column 3 odd and even cells
         function updateColumn2() {
             if (currentRow !== null) {
@@ -1062,4 +1134,3 @@
     </script>
 </body>
 </html>
-
